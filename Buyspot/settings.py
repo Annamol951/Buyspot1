@@ -61,6 +61,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+     "corsheaders.middleware.CorsMiddleware", #extra added
 ]
 
 ROOT_URLCONF = 'Buyspot.urls'
@@ -83,6 +84,11 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'Buyspot.wsgi.application'
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+  }
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases

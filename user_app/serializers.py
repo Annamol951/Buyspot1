@@ -3,11 +3,10 @@ import random
 from django.conf import settings
 from rest_framework import serializers
 from user_app.utils import send_otp
-from django.core.validators import validate_email
-from django.core.exceptions import ValidationError
 from django.contrib.auth import authenticate
 from .models import UserModel
-
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -44,6 +43,11 @@ class UserSerializer(serializers.ModelSerializer):
             "email",
             "password1",
             "password2",
+            "first_name",
+            "last_name",
+            "address",
+            "dob",
+            "pincode",
         ]
         read_only_fields = ("id",)
 
@@ -63,50 +67,47 @@ class UserSerializer(serializers.ModelSerializer):
 
         Used to create the user
         """
-        otp = random.randint(1000, 9999)
+        otp = random.randint(100000, 999999)
         otp_expiry = datetime.now() + timedelta(minutes = 10)
 
         user = UserModel(
             phone_number=validated_data["phone_number"],
             email=validated_data["email"],
+            first_name=validated_data["first_name"],
+            last_name=validated_data["last_name"],
+            address=validated_data["address"],
+            dob=validated_data["dob"],
+            pincode=validated_data["pincode"],
+
             otp=otp,
             otp_expiry=otp_expiry,
             max_otp_try=settings.MAX_OTP_TRY
         )
         user.set_password(validated_data["password1"])
         user.save()
-        # sending otp
         send_otp(validated_data["phone_number"], otp)
         return user
 
-
-
 #login
 
-from rest_framework import serializers
-from django.contrib.auth.models import User
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+class LoginSerializer(serializers.Serializer):
+    phone_number = serializers.CharField()
+    password = serializers.CharField() 
 
-class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserModel
-        fields = ('id', 'phone_number', 'email', 'password') 
+        fields = ('phone_number', 'password')
 
-class TokenPairSerializer(TokenObtainPairSerializer):
-    @classmethod
-    def get_token(cls, user):
-        token = super().get_token(user)
-        token['phone_number'] = user.phone_number
-        return token
+    def validate(self, data):
+        phone_number = data.get('phone_number')
+        password = data.get('password')
 
-class UserEditSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = UserModel
-        fields = ('id', 'email','address')
+        user = authenticate(phone_number=phone_number, password=password)#password1
+        if not user:
+            raise serializers.ValidationError('Invalid username or password')
 
-
-
-
+        return data
+    
 class ForgotPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False)
     phone_number = serializers.CharField(required=False)
@@ -126,15 +127,13 @@ class NewPasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError('New password must be at least 8 characters long')
         return new_password
 
-class LoginSerializer(serializers.Serializer):
-    phone_number = serializers.CharField()
-    password = serializers.CharField() 
-    def validate(self, data):
-        phone_number = data.get('phone_number')
-        password = data.get('password') 
 
-        user = authenticate(phone_number=phone_number, password1=password)
-        if not user:
-            raise serializers.ValidationError('Invalid username or password')
+#delivery address
 
-        return data
+from rest_framework import serializers
+from .models import DeliveryAddress
+
+class DeliveryAddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DeliveryAddress
+        fields = ('id', 'name', 'address_line_1', 'address_line_2', 'city', 'state', 'district', 'mobile', 'zipcode')

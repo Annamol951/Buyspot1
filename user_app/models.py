@@ -2,12 +2,6 @@ from django.db import models
 
 # Create your models here.
 
-from django.db import models
-
-# Create your models here.
-
-#check
-
 from django.conf import settings
 from django.contrib.auth.models import (
     AbstractBaseUser,
@@ -16,7 +10,6 @@ from django.contrib.auth.models import (
     PermissionsMixin,
 )
 from django.core.validators import RegexValidator, validate_email
-from django.db import models
 
 
 phone_regex = RegexValidator(
@@ -53,20 +46,25 @@ class UserModel(AbstractBaseUser, PermissionsMixin):
     """
     Custom User model.
     """
-    first_name = models.CharField(max_length=50, null=False, blank=False)
-    last_name = models.CharField(max_length=50, null=False, blank=False)
-    address = models.TextField(null=False, blank=False)
-    
+
     phone_number = models.CharField(
         unique=True, max_length=10, null=False, blank=False, validators=[phone_regex]
     )
     email = models.EmailField(
         max_length=50,
-        blank=False,
-        null=False,
+        blank=True,
+        null=True,
         validators=[validate_email],
     )
-    otp = models.IntegerField(null=True)
+
+    first_name = models.CharField(max_length=50, null=False, blank=False)
+    last_name = models.CharField(max_length=50, null=False, blank=False)
+    email = models.EmailField(max_length=50, null=True, blank=True)
+    address = models.TextField(max_length=255, null=False, blank=False)
+    dob = models.DateField(null=False)
+    pincode = models.IntegerField(default=0, null=False)
+
+    otp = models.IntegerField() #IntegerField,max_length=6
     otp_expiry = models.DateTimeField(blank=True, null=True)
     max_otp_try = models.CharField(max_length=2, default=settings.MAX_OTP_TRY)
     otp_max_out = models.DateTimeField(blank=True, null=True)
@@ -83,3 +81,30 @@ class UserModel(AbstractBaseUser, PermissionsMixin):
         return self.phone_number
 
 
+class UserProfile(models.Model):
+    """
+    User profile model.
+
+    Every user should have only one profile.
+    """
+
+    user = models.OneToOneField(
+        UserModel,
+        related_name="profile",
+        on_delete=models.CASCADE,
+        primary_key=True,
+    )
+    
+
+#delivery address
+
+class DeliveryAddress(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+    address_line_1 = models.CharField(max_length=255)
+    address_line_2 = models.CharField(max_length=255, blank=True)
+    city = models.CharField(max_length=255)
+    state = models.CharField(max_length=255)
+    district = models.CharField(max_length=255)
+    mobile = models.CharField(max_length=10)
+    zipcode = models.CharField(max_length=10)
