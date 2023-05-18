@@ -13,8 +13,8 @@ urlpatterns = [
     path('register/', views.RegisterView.as_view()),                 # for register the user
     path('verify_otp/<int:pk>', views.UserView.as_view()),           #for verify the user
     path('regenerate_otp/<int:pk>', views.RegenerateOTP.as_view()),  #for regenerate the OTP
-    path('login/', LoginView.as_view()),                             # for login
-    path('logout/', LogoutView.as_view()),                           # for logout
+    #path('login/', LoginView.as_view()),                             # for login
+    #path('logout/', LogoutView.as_view()),                           # for logout
     path('forgot_password', views.ForgotPasswordView.as_view()),     #forgot password
     path('update_password/<int:pk>', UpdatePasswordView.as_view()),  #update password
 
@@ -35,6 +35,14 @@ urlpatterns = [
 
     #path('LoginAPIView/', views.LoginAPIView.as_view()),
     #path('login', LoginView.as_view()),
+
+
+#for test
+
+	path('user/login/', UserLoginAPIView.as_view()),
+	path('user/', UserViewAPI.as_view()),
+	path('user/logout/', UserLogoutViewAPI.as_view()),
+
 
     
 ]

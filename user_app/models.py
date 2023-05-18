@@ -108,3 +108,53 @@ class DeliveryAddress(models.Model):
     district = models.CharField(max_length=255)
     mobile = models.CharField(max_length=10)
     zipcode = models.CharField(max_length=10)
+
+
+#for test
+
+# from django.db import models
+# from django.contrib.auth.base_user import BaseUserManager
+# from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
+
+
+# class CustomUserManager(BaseUserManager):
+# 	def create_user(self, phone_number, password=None):
+# 		if not phone_number:
+# 			raise ValueError('A user phone number is needed.')
+
+# 		if not password:
+# 			raise ValueError('A user password is needed.')
+
+# 		phone_number = self.model(phone_number)
+# 		user = self.model(phone_number=phone_number)
+# 		user.set_password(password)
+# 		user.save()
+# 		return user
+
+# 	def create_superuser(self, phone_number, password=None):
+# 		if not phone_number:
+# 			raise ValueError('A user phone number is needed.')
+
+# 		if not password:
+# 			raise ValueError('A user password is needed.')
+
+# 		user = self.create_user(phone_number, password)
+# 		user.is_superuser = True
+# 		user.is_staff = True
+# 		user.save()
+# 		return user
+
+
+# class User(models.Model):
+# 	user_id = models.AutoField(primary_key=True)
+# 	#email = models.EmailField(max_length=100, unique=True)
+# 	phone_number = models.CharField(max_length=100)
+# 	is_active = models.BooleanField(default=True)
+# 	is_staff = models.BooleanField(default=False)
+# 	date_joined = models.DateField(auto_now_add=True)
+# 	USERNAME_FIELD = 'phone_number'
+# 	#REQUIRED_FIELDS = ['username']
+# 	objects = UserModel()
+
+# 	def __str__(self):
+# 		return self.phone_number

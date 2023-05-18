@@ -112,36 +112,36 @@ class RegenerateOTP(APIView):
     
 #login
 
-def generate_jwt_token(user):
-    # generate JWT token with user id as payload
-    payload = {
-        'user_id': user.id,
-        'exp': datetime.utcnow() + timedelta(days=7),
-        'iat': datetime.utcnow()
-    }
+# def generate_jwt_token(user):
+#     # generate JWT token with user id as payload
+#     payload = {
+#         'user_id': user.id,
+#         'exp': datetime.utcnow() + timedelta(days=7),
+#         'iat': datetime.utcnow()
+#     }
 
-    token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
-    return token
+#     token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+#     return token
 
-class LoginView(APIView):
-    serializer_class = LoginSerializer
+# class LoginView(APIView):
+#     serializer_class = LoginSerializer
 
-    def post(self, request):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
+#     def post(self, request):
+#         serializer = self.serializer_class(data=request.data)
+#         serializer.is_valid(raise_exception=True)
 
-        user = authenticate(phone_number=serializer.validated_data['phone_number'],
-                            password=serializer.validated_data['password'])
+#         user = authenticate(phone_number=serializer.validated_data['phone_number'],
+#                             password=serializer.validated_data['password'])
 
-        if not user:
-            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+#         if not user:
+#             return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
-        # login the user
-        login(request, user)
+#         # login the user
+#         login(request, user)
 
-        # generate JWT token and return in response
-        token = generate_jwt_token(user)
-        return Response({'token': token}, status=status.HTTP_200_OK)
+#         # generate JWT token and return in response
+#         token = generate_jwt_token(user)
+#         return Response({'token': token}, status=status.HTTP_200_OK)
     
 
 #Forgot password
@@ -196,29 +196,41 @@ class UpdatePasswordView(APIView):
     
 #logout
 
+# from rest_framework.response import Response
+# from rest_framework import status
+# from rest_framework.permissions import IsAuthenticated
+
+
 # class LogoutView(APIView):
-#     def get(self, request, pk=None):
-#         request.token.delete()
-#         return Response({'message': 'Successfully logged out.'})
-    
+#     #permission_classes = [IsAuthenticated]
+
+#     def post(self, request):
+#         # Clear authentication-related data
+#         request.user.auth_token.delete()  # If using token-based authentication
+
+#         # Optionally, clear session data
+#         request.session.flush()
+
+#         # Return a success response
+#         return Response({"detail": "Logout successful."}, status=status.HTTP_200_OK)
 
 
 
 
-class LogoutView(APIView):
-    authentication_classes = [JWTAuthentication]
+# class LogoutView(APIView):
+#     authentication_classes = [JWTAuthentication]
 
-    def post(self, request):
-        try:
-            # Get the current user's token
-            token = request.auth
-            # Delete the user's token
-            token.delete()
-            # Return success response
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except Exception as e:
-            # If something goes wrong, return an error response
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+#     def post(self, request):
+#         try:
+#             # Get the current user's token
+#             token = request.auth.token.delete()
+#             # Delete the user's token
+            
+#             # Return success response
+#             return Response(status=status.HTTP_204_NO_CONTENT)
+#         except Exception as e:
+#             # If something goes wrong, return an error response
+#             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 #delivery address
@@ -246,3 +258,95 @@ class DeliveryAddressDetailAPIView(generics.RetrieveUpdateAPIView):
     
     def get_queryset(self):
         return DeliveryAddress.objects.filter(user=self.request.user)
+    
+
+
+#for test
+
+from django.shortcuts import render
+from user_app.serializers import UserLoginSerializer
+from rest_framework.views import APIView
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.exceptions import AuthenticationFailed
+from django.contrib.auth import authenticate
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from .utils import generate_access_token
+import jwt
+
+class UserLoginAPIView(APIView):
+	serializer_class = UserLoginSerializer
+	authentication_classes = (TokenAuthentication,)
+	permission_classes = (AllowAny,)
+
+	def post(self, request):
+		phone_number = request.data.get('phone_number', None)
+		password = request.data.get('password', None)
+
+		if not phone_number:
+			raise AuthenticationFailed('A user phone number is needed.')
+
+		if not password:
+			raise AuthenticationFailed('An user password is needed.')
+
+		user_instance = authenticate(phone_number=phone_number, password=password)
+
+		if not user_instance:
+			raise AuthenticationFailed('User not found.')
+
+		if user_instance.is_active:
+			user_access_token = generate_access_token(user_instance)
+			response = Response()
+			response.set_cookie(key='access_token', value=user_access_token, httponly=True)
+			response.data = {
+				'access_token': user_access_token
+			}
+			return response
+
+		return Response({
+			'message': 'Something went wrong.'
+		})
+
+
+
+class UserViewAPI(APIView):
+	authentication_classes = (TokenAuthentication,)
+	permission_classes = (AllowAny,)
+
+	def get(self, request):
+		user_token = request.COOKIES.get('access_token')
+
+		if not user_token:
+			raise AuthenticationFailed('Unauthenticated user.')
+
+		payload = jwt.decode(user_token, settings.SECRET_KEY, algorithms=['HS256'])
+
+		user_model = get_user_model()
+		user = user_model.objects.filter(id=payload['id']).first()
+		user_serializer = UserSerializer(user)
+		return Response(user_serializer.data)
+
+
+
+class UserLogoutViewAPI(APIView):
+	authentication_classes = (TokenAuthentication,)
+	permission_classes = (AllowAny,)
+
+	def get(self, request):
+		user_token = request.COOKIES.get('access_token', None)
+		if user_token:
+			response = Response()
+			response.delete_cookie('access_token')
+			response.data = {
+				'message': 'Logged out successfully.'
+			}
+			return response
+		response = Response()
+		response.data = {
+			'message': 'User is already logged out.'
+		}
+		return response
+

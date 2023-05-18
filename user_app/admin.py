@@ -8,6 +8,7 @@ from . import models
 
 
 admin.site.register(models.UserModel)
+#admin.site.register(models.User)
 admin.site.register(models.UserProfile)
 admin.site.register(models.DeliveryAddress)
 

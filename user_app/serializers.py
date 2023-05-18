@@ -72,6 +72,7 @@ class UserSerializer(serializers.ModelSerializer):
 
         user = UserModel(
             phone_number=validated_data["phone_number"],
+            password=validated_data['password'], #new created
             email=validated_data["email"],
             first_name=validated_data["first_name"],
             last_name=validated_data["last_name"],
@@ -90,23 +91,23 @@ class UserSerializer(serializers.ModelSerializer):
 
 #login
 
-class LoginSerializer(serializers.Serializer):
-    phone_number = serializers.CharField()
-    password = serializers.CharField() 
+# class LoginSerializer(serializers.Serializer):
+#     phone_number = serializers.CharField()
+#     password = serializers.CharField() 
 
-    class Meta:
-        model = UserModel
-        fields = ('phone_number', 'password')
+#     class Meta:
+#         model = UserModel
+#         fields = ('phone_number', 'password')
 
-    def validate(self, data):
-        phone_number = data.get('phone_number')
-        password = data.get('password')
+#     def validate(self, data):
+#         phone_number = data.get('phone_number')
+#         password = data.get('password')
 
-        user = authenticate(phone_number=phone_number, password=password)#password1
-        if not user:
-            raise serializers.ValidationError('Invalid username or password')
+#         user = authenticate(phone_number=phone_number, password=password)#password1
+#         if not user:
+#             raise serializers.ValidationError('Invalid username or password')
 
-        return data
+#         return data
     
 class ForgotPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False)
@@ -137,3 +138,28 @@ class DeliveryAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = DeliveryAddress
         fields = ('id', 'name', 'address_line_1', 'address_line_2', 'city', 'state', 'district', 'mobile', 'zipcode')
+
+
+#for test
+
+class UserLoginSerializer(serializers.Serializer):
+	# email = serializers.CharField(max_length=100)
+	# phone_number = serializers.CharField(max_length=100, read_only=True)
+	# password = serializers.CharField(max_length=100, min_length=8, style={'input_type': 'password'})
+	# token = serializers.CharField(max_length=255, read_only=True)
+    phone_number = serializers.CharField()
+    password = serializers.CharField() 
+
+    class Meta:
+        model = UserModel
+        fields = ('phone_number', 'password')
+
+    def validate(self, data):
+        phone_number = data.get('phone_number')
+        password = data.get('password')
+
+        user = authenticate(phone_number=phone_number, password=password)#password1
+        if not user:
+            raise serializers.ValidationError('Invalid username or password')
+
+        return data
